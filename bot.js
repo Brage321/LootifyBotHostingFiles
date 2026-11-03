@@ -638,6 +638,26 @@ bot.on('kick', async (serverId, userId) => {
   }
 });
 
+bot.on('guildJoin', async (guild) => {
+  const OWNER_ID = '14012713-369e-4e39-9fa8-8f319d71c49d';
+  try {
+    const user = await bot.user(OWNER_ID);
+    if (!user || user.bot) return;
+    
+    const dm = await user.createDM();
+    
+    const embed = new Embed()
+      .title('Bot Added to Server!')
+      .description(`The bot has been added to **${guild.name}** (${guild.member_count} members).\n\n**Commands Overview:**\n\n**Economy:**\n`/work` — earn coins from a job (1 hour cooldown)\n`/crime` — take a risky shot at a big payout (10 minute cooldown)\n`/balance` — check your wallet and bank\n`/deposit <amount|all>` / `/withdraw <amount|all>` — move coins\n`/economyboard` — see the server economy leaderboard\n\n**Leveling:**\n`/rank` — see your level and XP progress\n`/leaderboard` — see the server XP leaderboard\n`/global-levelboard` — see global level leaderboard\n\n**Moderation:**\n`/log-setup` — set auto-log channel for this server\n`/server-usage` — show bot host resource usage\n\n**Info:**\n`/help` — show this command guide\n`/status` — show bot status (owner only)\n\nSupport Server: https://yapin.gg/invite/6ZBZ2yQRBG`)
+      .color('green');
+    
+    await dm.send({ embeds: [embed] });
+    console.log(`[guildJoin] DM sent to owner ${OWNER_ID} for guild ${guild.name}`);
+  } catch (error) {
+    console.warn('[guildJoin] Failed to send DM to owner:', error.message || error);
+  }
+});
+
 function start() {
   process.once('SIGINT', () => {
     console.log('[app] received SIGINT; shutting down');
