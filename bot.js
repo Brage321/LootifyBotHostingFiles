@@ -78,6 +78,10 @@ loadDotEnv();
 const TOKEN = process.env.YAPPER_TOKEN?.trim();
 if (!TOKEN) throw new Error('YAPPER_TOKEN is required. Set it in the environment or in .env.');
 
+const UPDATE_CHANNEL_ID = process.env.UPDATE_CHANNEL_ID?.trim() || '';
+const GITHUB_REPO = process.env.GITHUB_REPO?.trim() || 'Brage321/LootifyBotHostingFiles';
+const GITHUB_TOKEN = process.env.GITHUB_TOKEN?.trim() || '';
+
 const bot = new Bot(TOKEN);
 const state = loadState();
 
@@ -89,6 +93,14 @@ bot.on('ready', async (me) => {
   } catch (error) {
     console.warn(`[app] could not set status: ${error.message || error}`);
   }
+});
+
+bot.on('ready', () => {
+  if (!UPDATE_CHANNEL_ID) return;
+  setTimeout(() => {
+    checkForUpdates();
+    setInterval(checkForUpdates, 5 * 60 * 1000);
+  }, 10000);
 });
 
 function replyEmbed(message, title, description, color = 'blue') {
@@ -123,6 +135,57 @@ function profileFor(guildId, userId) {
 
 function save() {
   saveState(state);
+}
+
+async function checkForUpdates() {
+  if (!UPDATE_CHANNEL_ID) return;
+  try {
+    const headers = { 'User-Agent': 'LootifyBot' };
+    if (GITHUB_TOKEN) headers.Authorization = `Bearer ${GITHUB_TOKEN}`;
+    const response = await fetch(`https://api.github.com/repos/${GITHUB_REPO}/commits?per_page=20`, { headers });
+    if (!response.ok) {
+      console.warn(`[updates] GitHub API returned ${response.status}`);
+      return;
+    }
+    const commits = await response.json();
+    if (!Array.isArray(commits) || commits.length === 0) return;
+
+    if (!state.lastCommitSha) {
+      state.lastCommitSha = commits[0].sha;
+      if (typeof state.updateCounter !== 'number') state.updateCounter = 0;
+      save();
+      return;
+    }
+
+    const newCommits = [];
+    for (const commit of commits) {
+      if (commit.sha === state.lastCommitSha) break;
+      newCommits.push(commit);
+    }
+    if (newCommits.length === 0) return;
+
+    newCommits.reverse();
+    for (const commit of newCommits) {
+      state.updateCounter = (state.updateCounter || 0) + 1;
+      const fullMessage = String(commit.commit?.message || 'Update').trim();
+      const [titleLine, ...rest] = fullMessage.split('\n');
+      const body = rest.join('\n').trim();
+      const embed = new Embed()
+        .title(`Update (${state.updateCounter})`)
+        .description(body ? `${titleLine}\n\n${body}` : titleLine)
+        .color('blue');
+      try {
+        await bot.send(UPDATE_CHANNEL_ID, '', { embeds: [embed] });
+      } catch (error) {
+        console.warn(`[updates] Could not send update embed: ${error.message || error}`);
+      }
+    }
+
+    state.lastCommitSha = commits[0].sha;
+    save();
+  } catch (error) {
+    console.warn(`[updates] Failed to check for updates: ${error.message || error}`);
+  }
 }
 
 function randomInt(min, max) {
