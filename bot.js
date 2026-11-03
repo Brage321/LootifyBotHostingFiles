@@ -297,8 +297,11 @@ function helpText() {
     '`/rank` — see your level and XP progress',
     '`/leaderboard` — see the server XP leaderboard',
     '`/economyboard` — see the server economy leaderboard',
+    '`/global-leaderboard` — see global economy leaderboard',
+    '`/global-levelboard` — see global level leaderboard',
     '',
     'Chat to earn XP! You get **15–25 XP** once per minute. Level XP follows the Arcane-style curve.',
+    'Support Server: https://yapin.gg/invite/6ZBZ2yQRBG'
   ].join('\n');
 }
 
