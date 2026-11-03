@@ -1,0 +1,18 @@
+{
+  "name": "yapper-fun-bot",
+  "version": "1.0.0",
+  "description": "Yapper bot with chat leveling, XP leaderboards, and a per-server coin economy.",
+  "main": "bot.js",
+  "type": "module",
+  "scripts": {
+    "start": "node bot.js",
+    "dev": "node bot.js",
+    "check": "node --check bot.js && node --check economy.js && node --check yapper.js",
+    "test": "node --test"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "keywords": ["yapper", "yapin", "economy", "leveling", "bot"],
+  "author": "Yapper Fun Bot"
+}
