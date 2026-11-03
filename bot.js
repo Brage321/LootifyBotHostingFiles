@@ -406,7 +406,7 @@ bot.command('server-usage', 'Show bot host resource usage', async (message) => {
     const totalBytes = stats.blocks * stats.bsize;
     const freeBytes = stats.bfree * stats.bsize;
     const usedBytes = totalBytes - freeBytes;
-    storageText = `${mb(usedBytes)} MB used of ${mb(totalBytes)} MB (${mb(freeBytes)} MB free)`;
+    storageText = `${mb(usedBytes)}/${mb(totalBytes)} MB`;
   } catch (error) {
     storageText = `Unavailable (${error.message || error})`;
   }
@@ -414,11 +414,7 @@ bot.command('server-usage', 'Show bot host resource usage', async (message) => {
   const embed = new Embed()
     .title('Server usage')
     .description(
-      `**RAM (process):** ${mb(mem.rss)} MB RSS · ${mb(mem.heapUsed)}/${mb(mem.heapTotal)} MB heap\n` +
-      `**System RAM:** ${mb(os.totalmem() - os.freemem())} / ${mb(os.totalmem())} MB used\n` +
-      `**CPU (process avg):** ${cpuPercent}% · load avg: ${os.loadavg().map((n) => n.toFixed(2)).join(', ')}\n` +
-      `**Storage:** ${storageText}\n` +
-      `**Uptime:** ${Math.floor(uptimeSeconds)}s · Node ${process.version}`
+      `RAM: ${mb(mem.rss)} MB | CPU: ${cpuPercent}% | Storage: ${storageText} | Uptime: ${Math.floor(uptimeSeconds)}s`
     )
     .color('blue');
   await message.reply('', { embeds: [embed] });
