@@ -78,7 +78,8 @@ loadDotEnv();
 const TOKEN = process.env.YAPPER_TOKEN?.trim();
 if (!TOKEN) throw new Error('YAPPER_TOKEN is required. Set it in the environment or in .env.');
 
-const UPDATE_CHANNEL_ID = process.env.UPDATE_CHANNEL_ID?.trim() || '';
+const UPDATE_CHANNEL_ID = process.env.UPDATE_CHANNEL_ID?.trim() || '2371da9a-c956-48bd-98bc-a2e85cc5371d';
+const SUPPORT_SERVER_ID = process.env.SUPPORT_SERVER_ID?.trim() || '7f3ee36e-c0a5-44d5-97ae-a8ea85558828';
 const GITHUB_REPO = process.env.GITHUB_REPO?.trim() || 'Brage321/LootifyBotHostingFiles';
 const GITHUB_TOKEN = process.env.GITHUB_TOKEN?.trim() || '';
 
