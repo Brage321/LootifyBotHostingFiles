@@ -554,6 +554,34 @@ bot.command('server-usage', 'Show bot host resource usage', async (message) => {
   await message.reply('', { embeds: [embed] });
 });
 
+bot.command('status', 'Show bot status (owner only)', async (message) => {
+  const OWNER_ID = '14012713-369e-4e39-9fa8-8f319d71c49d';
+  if (message.author_id !== OWNER_ID) {
+    await replyEmbed(message, 'Unauthorized', 'You are not the bot owner.', 'orange');
+    return;
+  }
+  try {
+    const ip = getIpAddress();
+    const cpuPercent = getOperationalPercent();
+    const over = isOver50(cpuPercent);
+
+    const embed = new Embed()
+      .title('Bot Status')
+      .description(
+        `IP: ${ip}\n` +
+        `Operational Percent: ${cpuPercent}%\n` +
+        `API: ${over ? '(over 50%) - Operational' : cpuPercent}%\n` +
+        `Bot Host: ${over ? '(over 50%) - Operational' : cpuPercent}%\n` +
+        `Website: ${over ? '(over 50%) - Operational' : cpuPercent}%`
+      )
+      .color(over ? 'orange' : 'green');
+    await message.reply('', { embeds: [embed] });
+  } catch (error) {
+    console.error('[status] Error:', error.message || error);
+    await replyEmbed(message, 'Error', `Failed to get status: ${error.message || error}`, 'red');
+  }
+});
+
 function start() {
   process.once('SIGINT', () => {
     console.log('[app] received SIGINT; shutting down');
