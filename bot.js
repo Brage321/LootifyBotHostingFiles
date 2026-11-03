@@ -117,29 +117,25 @@ function isOver50(percent) {
 async function sendHourlyStatus() {
   if (!HOUR_STATUS_CHANNEL_ID) return;
   try {
-    const ip = getIpAddress();
     const cpuPercent = getOperationalPercent();
+    const over = parseFloat(cpuPercent) < 50;
 
-    // For "API", "Bot Host", "Website" - we'll use the CPU percent as a proxy
-    // since we don't have separate API/bot-hosting metrics without external APIs
+    // For "API", "Bot Host", "Website" - show status based on the percentage
     const labels = ['API', 'Bot Host', 'Website'];
     const entries = [];
 
     for (const label of labels) {
-      const p = cpuPercent; // using same CPU percent for all as example
-      const over = isOver50(p);
-      const statusLine = over ? `API: (over 50%) - Operational` : `API: ${p}%`;
-      entries.push(`${label}: ${statusLine}`);
+      const statusLine = over ? '- Not Operational' : cpuPercent;
+      entries.push(`${label}: ${statusLine}%`);
     }
 
     const embed = new Embed()
       .title('Hourly Status')
       .description(
-        `IP: ${ip}\n` +
         `Operational Percent: ${cpuPercent}%\n` +
         entries.join('\n')
       )
-      .color(isOver50(cpuPercent) ? 'orange' : 'green');
+      .color(over ? 'red' : 'green');
 
     await bot.send(HOUR_STATUS_CHANNEL_ID, '', { embeds: [embed] });
     console.log(`[hourly] Sent status to channel ${HOUR_STATUS_CHANNEL_ID}`);
@@ -561,20 +557,18 @@ bot.command('status', 'Show bot status (owner only)', async (message) => {
     return;
   }
   try {
-    const ip = getIpAddress();
     const cpuPercent = getOperationalPercent();
-    const over = isOver50(cpuPercent);
+    const over = parseFloat(cpuPercent) < 50;
 
     const embed = new Embed()
       .title('Bot Status')
       .description(
-        `IP: ${ip}\n` +
         `Operational Percent: ${cpuPercent}%\n` +
-        `API: ${over ? '(over 50%) - Operational' : cpuPercent}%\n` +
-        `Bot Host: ${over ? '(over 50%) - Operational' : cpuPercent}%\n` +
-        `Website: ${over ? '(over 50%) - Operational' : cpuPercent}%`
+        `API: ${over ? '- Not Operational' : cpuPercent}%\n` +
+        `Bot Host: ${over ? '- Not Operational' : cpuPercent}%\n` +
+        `Website: ${over ? '- Not Operational' : cpuPercent}%`
       )
-      .color(over ? 'orange' : 'green');
+      .color(over ? 'red' : 'green');
     await message.reply('', { embeds: [embed] });
   } catch (error) {
     console.error('[status] Error:', error.message || error);
