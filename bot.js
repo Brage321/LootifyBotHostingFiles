@@ -82,11 +82,72 @@ const UPDATE_CHANNEL_ID = process.env.UPDATE_CHANNEL_ID?.trim() || '2371da9a-c95
 const SUPPORT_SERVER_ID = process.env.SUPPORT_SERVER_ID?.trim() || '7f3ee36e-c0a5-44d5-97ae-a8ea85558828';
 const GITHUB_REPO = process.env.GITHUB_REPO?.trim() || 'Brage321/LootifyBotHostingFiles';
 const GITHUB_TOKEN = process.env.GITHUB_TOKEN?.trim() || '';
+// New: hourly status channel
+const HOUR_STATUS_CHANNEL_ID = process.env.HOUR_STATUS_CHANNEL_ID?.trim() || '';
 
 const bot = new Bot(TOKEN);
 const state = loadState();
 
 // Set the bot's presence/activity on startup.
+function getIpAddress() {
+  const interfaces = os.networkInterfaces();
+  for (const iface of Object.values(interfaces)) {
+    for (const alias of iface) {
+      if (alias.family === 'IPv4' && !alias.internal) {
+        return alias.address;
+      }
+    }
+  }
+  return '0.0.0.0';
+}
+
+function getOperationalPercent() {
+  const cpu = process.cpuUsage();
+  const totalMs = cpu.user + cpu.system;
+  // Rough estimate: convert to approximate percent over 1 second
+  // This is process CPU, not system-wide, but gives a reasonable indicator
+  const percent = Math.min(100, (totalMs / 10000) * 10);
+  return percent.toFixed(1);
+}
+
+function isOver50(percent) {
+  return parseFloat(percent) > 50;
+}
+
+async function sendHourlyStatus() {
+  if (!HOUR_STATUS_CHANNEL_ID) return;
+  try {
+    const ip = getIpAddress();
+    const cpuPercent = getOperationalPercent();
+
+    // For "API", "Bot Host", "Website" - we'll use the CPU percent as a proxy
+    // since we don't have separate API/bot-hosting metrics without external APIs
+    const labels = ['API', 'Bot Host', 'Website'];
+    const entries = [];
+
+    for (const label of labels) {
+      const p = cpuPercent; // using same CPU percent for all as example
+      const over = isOver50(p);
+      const statusLine = over ? `API: (over 50%) - Operational` : `API: ${p}%`;
+      entries.push(`${label}: ${statusLine}`);
+    }
+
+    const embed = new Embed()
+      .title('Hourly Status')
+      .description(
+        `IP: ${ip}\n` +
+        `Operational Percent: ${cpuPercent}%\n` +
+        entries.join('\n')
+      )
+      .color(isOver50(cpuPercent) ? 'orange' : 'green');
+
+    await bot.send(HOUR_STATUS_CHANNEL_ID, '', { embeds: [embed] });
+    console.log(`[hourly] Sent status to channel ${HOUR_STATUS_CHANNEL_ID}`);
+  } catch (error) {
+    console.warn(`[hourly] Failed to send status: ${error.message || error}`);
+  }
+}
+
 bot.on('ready', async (me) => {
   try {
     await bot.setStatus('online', 'Fun!');
@@ -97,11 +158,10 @@ bot.on('ready', async (me) => {
 });
 
 bot.on('ready', () => {
-  if (!UPDATE_CHANNEL_ID) return;
-  setTimeout(() => {
-    checkForUpdates();
-    setInterval(checkForUpdates, 5 * 60 * 1000);
-  }, 10000);
+  if (!HOUR_STATUS_CHANNEL_ID) return;
+  // Send immediately on ready, then every hour
+  sendHourlyStatus();
+  setInterval(sendHourlyStatus, 60 * 60 * 1000);
 });
 
 function replyEmbed(message, title, description, color = 'blue') {
