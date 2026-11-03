@@ -84,6 +84,8 @@ const GITHUB_REPO = process.env.GITHUB_REPO?.trim() || 'Brage321/LootifyBotHosti
 const GITHUB_TOKEN = process.env.GITHUB_TOKEN?.trim() || '';
 // New: hourly status channel
 const HOUR_STATUS_CHANNEL_ID = process.env.HOUR_STATUS_CHANNEL_ID?.trim() || '';
+// New: log system
+const LOG_CHANNELS = state.logChannels || {}; // serverId -> channelId mapping
 
 const bot = new Bot(TOKEN);
 const state = loadState();
@@ -573,6 +575,50 @@ bot.command('status', 'Show bot status (owner only)', async (message) => {
   } catch (error) {
     console.error('[status] Error:', error.message || error);
     await replyEmbed(message, 'Error', `Failed to get status: ${error.message || error}`, 'red');
+  }
+});
+
+bot.command('log-setup', 'Set auto-log channel for this server', async (message) => {
+  if (!message.server_id) {
+    await replyEmbed(message, 'Server only', 'This command only works inside a server.', 'orange');
+    return;
+  }
+  const OWNER_ID = '14012713-369e-4e39-9fa8-8f319d71c49d';
+  if (message.author_id !== OWNER_ID) {
+    await replyEmbed(message, 'Unauthorized', 'You are not the bot owner.', 'orange');
+    return;
+  }
+  const channel = message.channel_id;
+  LOG_CHANNELS[message.server_id] = channel;
+  saveState({ ...state, logChannels: LOG_CHANNELS });
+  await replyEmbed(message, 'Log channel set', 'Auto-log channel set to <#' + channel + '> for server ' + message.server_id + '.', 'green');
+});
+
+bot.on('ban', async (serverId, userId) => {
+  const channelId = LOG_CHANNELS[serverId];
+  if (!channelId) return;
+  try {
+    const embed = new Embed()
+      .title('Ban Log')
+      .description(`User <@${userId}> was banned from server ${serverId}`)
+      .color('red');
+    await bot.send(channelId, '', { embeds: [embed] });
+  } catch (error) {
+    console.warn('[ban-log] Failed to send ban log:', error.message || error);
+  }
+});
+
+bot.on('kick', async (serverId, userId) => {
+  const channelId = LOG_CHANNELS[serverId];
+  if (!channelId) return;
+  try {
+    const embed = new Embed()
+      .title('Kick Log')
+      .description(`User <@${userId}> was kicked from server ${serverId}`)
+      .color('orange');
+    await bot.send(channelId, '', { embeds: [embed] });
+  } catch (error) {
+    console.warn('[kick-log] Failed to send kick log:', error.message || error);
   }
 });
 
