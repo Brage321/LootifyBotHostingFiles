@@ -85,7 +85,7 @@ const GITHUB_TOKEN = process.env.GITHUB_TOKEN?.trim() || '';
 // New: hourly status channel
 const HOUR_STATUS_CHANNEL_ID = process.env.HOUR_STATUS_CHANNEL_ID?.trim() || '';
 // New: log system
-const LOG_CHANNELS = state.logChannels || {}; // serverId -> channelId mapping
+const LOG_CHANNELS = {}; // serverId -> channelId mapping (loaded from state after init)
 
 const bot = new Bot(TOKEN);
 const state = loadState();
