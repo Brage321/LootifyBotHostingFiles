@@ -146,10 +146,23 @@ async function sendHourlyStatus() {
   }
 }
 
+function formatUptime(seconds) {
+  const days = Math.floor(seconds / 86400);
+  const hours = Math.floor((seconds % 86400) / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+  const secs = seconds % 60;
+  if (days > 0) return `${days}d ${hours}h ${minutes}m`;
+  if (hours > 0) return `${hours}h ${minutes}m ${secs}s`;
+  if (minutes > 0) return `${minutes}m ${secs}s`;
+  return `${Math.round(secs)}s`;
+}
+
 bot.on('ready', async (me) => {
   try {
-    await bot.setStatus('online', 'Fun!');
-    console.log(`[app] ${me?.username ?? 'bot'} is online with status "Fun!"`);
+    const uptime = process.uptime();
+    const uptimeText = formatUptime(uptime);
+    await bot.setStatus('online', uptimeText);
+    console.log(`[app] ${me?.username ?? 'bot'} is online with status "${uptimeText}"`);
   } catch (error) {
     console.warn(`[app] could not set status: ${error.message || error}`);
   }
